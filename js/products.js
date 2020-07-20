@@ -1,217 +1,85 @@
-Vue.component('delProductModal', {
-    template: '#delProductModal',
-    data() {
-        return {
-        };
-    },
-    props: {
-        tempProduct: {
-            type: Object,
-            default() {
-                return {
-                    imageUrl: [],
-                };
-            },
-        },
-        user: {
-            type: Object,
-            default() {
-                return {
-                };
-            },
-        },
-    },
-    methods: {
-        // 刪除產品
-        delProduct() {
-            const url = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${this.tempProduct.id}`;
+import pagination from './pagination.js';
+import modal from './modal.js';
 
-            //預設帶入 token
-            axios.defaults.headers.common.Authorization = `Bearer ${this.user.token}`;
-
-            axios.delete(url).then(() => {
-                $('#delProductModal').modal('hide');
-                this.$emit('update');
-            });
-        },
-    }
-});
-
-Vue.component('productModal', {
-    template: '#productModal',
-    data() {
-        return {
-            tempProduct: {
-                imageUrl: [],
-            },
-        };
-    },
-    props: {
-        productid: {
-            type: String,
-            default: '',
-        },
-        status: {
-            type: Object,
-            default() {
-                return {
-                };
-            },
-        },
-        isNew: {
-            type: Boolean,
-            default: true,
-        },
-        user: {
-            type: Object,
-            default() {
-                return {
-                };
-            },
-        },
-    },
-    methods: {
-        getProduct(id) {
-            const api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${id}`;
-            axios.get(api).then((res) => {
-                $('#productModal').modal('show');
-                this.tempProduct = res.data.data;
-            }).catch((error) => {
-                console.log(error);
-            });
-        },
-        // 上傳產品資料
-        updateProduct() {
-            // 新增商品
-            let api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product`;
-            let httpMethod = 'post';
-            // 當不是新增商品時則切換成編輯商品 API
-            if (!this.isNew) {
-                api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${this.tempProduct.id}`;
-                httpMethod = 'patch';
-            }
-
-            //預設帶入 token
-            axios.defaults.headers.common.Authorization = `Bearer ${this.user.token}`;
-
-            axios[httpMethod](api, this.tempProduct).then(() => {
-                $('#productModal').modal('hide');
-                this.$emit('update');
-            }).catch((error) => {
-                console.log(error)
-            });
-        },
-        // 上傳檔案
-        uploadFile() {
-            const uploadedFile = this.$refs.file.files[0];
-            const formData = new FormData();
-            formData.append('file', uploadedFile);
-            const url = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/storage`;
-            this.status.fileUploading = true;
-            axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            }).then((response) => {
-                this.status.fileUploading = false;
-                if (response.status === 200) {
-                    this.tempProduct.imageUrl.push(response.data.data.path);
-                }
-            }).catch(() => {
-                console.log('上傳不可超過 2 MB');
-                this.status.fileUploading = false;
-            });
-        },
-    },
-});
-
-Vue.component('pagination', {
-    template: '#pagination',
-    data() {
-        return {
-        };
-    },
-    props: {
-        pages: {
-            type: Object,
-            default() {
-                return {
-                };
-            },
-        },
-    },
-    methods: {
-        emitPages(item) {
-            this.$emit('emit-pages', item);
-        },
-    },
-});
+Vue.component('pagination', pagination);
+Vue.component('modal', modal);
 
 new Vue({
-    el: '#app',
-    data() {
-        return {
-            products: [],
-            pagination: {},
-            tempProduct: {
-                imageUrl: [],
-            },
-            isNew: false,
-            status: {
-                fileUploading: false,
-            },
-            user: {
-                token: '',
-                uuid: '20f81077-1b58-4538-baa0-999ec629e11b',
-            },
-        };
+  el: '#app',
+  data: {
+    products: [],
+    pagination: {},
+    tempProduct: {
+      imageUrl: []
     },
-    created() {
-        // 取得 token 的 cookies
-        // 詳情請見：https://developer.mozilla.org/zh-CN/docs/Web/API/Document/cookie
-        this.user.token = document.cookie.replace(/(?:(?:^|.*;\s*)token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-        // 若無法取得 token 則返回 Login 頁面
-        if (this.user.token === '') {
-            window.location = 'index.html';
+    api: {
+      uuid: '20f81077-1b58-4538-baa0-999ec629e11b',
+      path: 'https://course-ec-api.hexschool.io/api/',
+    },
+    token: '',
+    isNew: false,
+    loadingBtn: '',
+  },
+  methods: {
+    updateProduct() { },
+    openModal(isNew, item) {
+      switch (isNew) {
+        case 'new':
+          this.tempProduct = { imageUrl: [] };
+          this.isNew = true;
+          $('#productModal').modal('show');
+          break;
+        case 'edit':
+          this.isNew = false;
+          this.loadingBtn = item.id;
+          const url = `${this.api.path}${this.api.uuid}/admin/ec/product/${item.id}`;
+          axios.get(url).then((res) => {
+            this.tempProduct = res.data.data;
+            $('#productModal').modal('show');
+            this.loadingBtn = '';
+          });
+          break;
+        case 'delete':
+          $('#delProductModal').modal('show');
+          this.tempProduct = JSON.parse(JSON.stringify(item));
+          break;
+        default:
+          break;
+      }
+    },
+    delProduct() {
+      if (this.tempProduct.id) {
+        const id = this.tempProduct.id;
+        this.products.forEach((item, i) => {
+          if (item.id === id) {
+            this.products.splice(i, 1);
+            this.tempProduct = {};
+          }
+        });
+      }
+      $('#delProductModal').modal('hide');
+    },
+    getProducts(num = 1) {
+      const url = `${this.api.path}${this.api.uuid}/admin/ec/products?page=${num}`;
+      axios.get(url).then((res) => {
+        this.products = res.data.data;
+        this.pagination = res.data.meta.pagination;
+
+        if (this.tempProduct.id) {
+          this.tempProduct = {
+            imageUrl: [],
+          };
+          $('#productModal').modal('hide');
         }
-
-        this.getProducts();
+      });
     },
-    methods: {
-        // 取得產品資料
-        getProducts(page = 1) {
-            const api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/products?page=${page}`;
-            //預設帶入 token
-            axios.defaults.headers.common.Authorization = `Bearer ${this.user.token}`;
-
-            axios.get(api).then((response) => {
-                this.products = response.data.data;
-                this.pagination = response.data.meta.pagination;
-            });
-        },
-        // 開啟 Modal 視窗
-        openModal(isNew, item) {
-            switch (isNew) {
-                case 'new':
-                    this.tempProduct = {
-                        imageUrl: [],
-                    };
-                    this.isNew = true;
-                    $('#productModal').modal('show');
-                    break;
-                case 'edit':
-                    this.tempProduct = Object.assign({}, item);
-                    // 使用 refs 觸發子元件方法
-                    this.$refs.productModel.getProduct(this.tempProduct.id);
-                    this.isNew = false;
-                    break;
-                case 'delete':
-                    this.tempProduct = Object.assign({}, item);
-                    $('#delProductModal').modal('show');
-                    break;
-                default:
-                    break;
-            }
-        },
-    },
-})
+  },
+  created() {
+    this.token = document.cookie.replace(
+      /(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/,
+      '$1'
+    );
+    axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+    this.getProducts();
+  },
+});
