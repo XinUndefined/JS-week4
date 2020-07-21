@@ -103,10 +103,12 @@ export default {
   props: ['isNew', 'status', 'user'],
   methods: {
     getProduct(id) {
+      this.isLoading = true;
       const api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${id}`;
       axios.get(api).then((res) => {
         $('#productModal').modal('show');
         this.tempProduct = res.data.data;
+        this.isLoading = false;
       }).catch((error) => {
         console.log(error);
       });
@@ -120,6 +122,7 @@ export default {
       if (!this.isNew) {
         api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${this.tempProduct.id}`;
         httpMethod = 'patch';
+        this.isLoading = true;
       }
 
       //預設帶入 token
@@ -129,7 +132,18 @@ export default {
         $('#productModal').modal('hide');
         this.$emit('update');
       }).catch((error) => {
-        console.log(error)
+        this.isLoading = false;
+        Swal.fire({
+          toast: true,
+          title: '編輯失敗',
+          icon: 'error',
+          showConfirmButton: false,
+          timer: 2000,
+          padding: '1.5rem',
+          showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+          },
+        });
       });
     },
     // 上傳檔案

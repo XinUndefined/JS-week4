@@ -34,6 +34,7 @@ export default {
   methods: {
     // 刪除產品
     delProduct() {
+      this.isLoading = true;
       const url = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/product/${this.tempProduct.id}`;
 
       //預設帶入 token
@@ -42,6 +43,7 @@ export default {
       axios.delete(url).then(() => {
         $('#delProductModal').modal('hide');
         this.$emit('update');
+        this.isLoading = false;
       });
     },
   }

@@ -14,7 +14,10 @@
     integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
     crossorigin="anonymous"
   >
-
+  <link
+    href="https://cdn.jsdelivr.net/npm/vue-loading-overlay@3/dist/vue-loading.css"
+    rel="stylesheet"
+  >
   <style>
     html,
     body {
@@ -85,6 +88,7 @@
         </button>
       </form>
     </div>
+    <loading :active.sync="isLoading"></loading>
   </div>
   <script
     src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
@@ -106,32 +110,8 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script>
-    new Vue({
-      el: '#app',
-      data: {
-        user: {
-          email: '',
-          password: '',
-        },
-      },
-      methods: {
-        signin() {
-          const api = `https://course-ec-api.hexschool.io/api/auth/login`;
-          axios.post(api, this.user).then((response) => {
-            const token = response.data.token;
-            const expired = response.data.expired;
-            // 寫入 cookie token
-            // expires 設置有效時間
-            document.cookie = `token=${token};expires=${new Date(expired * 1000)}; path=/`;
-            window.location = 'Products.html';
-          }).catch((error) => {
-            console.log(error);
-          });
-        },
-      },
-    })
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-loading-overlay@3"></script>
+  <script src="./js/login.js"></script>
 </body>
 
 </html>

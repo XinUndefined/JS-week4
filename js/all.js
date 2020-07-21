@@ -2,12 +2,14 @@ import productModal from './productModal.js';
 import delProductModal from './delProductModal.js';
 import pagination from './pagination.js';
 
+Vue.component('loading', VueLoading);
 Vue.component('productModal', productModal);
 Vue.component('delProductModal', delProductModal);
 Vue.component('pagination', pagination);
 new Vue({
   el: '#app',
   data: {
+    isLoading: false,
     products: [],
     pagination: {},
     tempProduct: {
@@ -36,6 +38,7 @@ new Vue({
   methods: {
     // 取得產品資料
     getProducts(page = 1) {
+      this.isLoading = true;
       const api = `https://course-ec-api.hexschool.io/api/${this.user.uuid}/admin/ec/products?page=${page}`;
       //預設帶入 token
       axios.defaults.headers.common.Authorization = `Bearer ${this.user.token}`;
@@ -43,6 +46,7 @@ new Vue({
       axios.get(api).then((response) => {
         this.products = response.data.data;
         this.pagination = response.data.meta.pagination;
+        this.isLoading = false;
       });
     },
     // 開啟 Modal 視窗
